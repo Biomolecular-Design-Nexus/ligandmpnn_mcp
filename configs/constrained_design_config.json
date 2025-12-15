@@ -1,0 +1,54 @@
+{
+  "_description": "Configuration for constrained protein sequence design with fixed/redesigned residues",
+  "_source": "Extracted from examples/use_case_5_constrained_design.py",
+
+  "model": {
+    "model_type": "ligand_mpnn",
+    "temperature": 0.1,
+    "seed": 111
+  },
+
+  "processing": {
+    "batch_size": 1,
+    "verbose": 1,
+    "save_stats": 0
+  },
+
+  "ligand_context": {
+    "ligand_mpnn_use_atom_context": 1,
+    "ligand_mpnn_use_side_chain_context": 0,
+    "ligand_mpnn_cutoff_for_score": 8.0
+  },
+
+  "packing": {
+    "pack_side_chains": 0,
+    "pack_with_ligand_context": 0,
+    "repack_everything": 0,
+    "number_of_packs_per_design": 0
+  },
+
+  "membrane": {
+    "global_transmembrane_label": 0,
+    "transmembrane_buried": "",
+    "transmembrane_interface": ""
+  },
+
+  "constraints": {
+    "fixed_residues": "",
+    "redesigned_residues": "",
+    "omit_AA": "",
+    "bias_AA": "",
+    "chains_to_design": "",
+    "parse_these_chains_only": "",
+    "bias_AA_per_residue": "",
+    "omit_AA_per_residue": ""
+  },
+
+  "advanced": {
+    "homo_oligomer": 0,
+    "zero_indexed": 0,
+    "parse_atoms_with_zero_occupancy": 0,
+    "file_ending": "",
+    "fasta_seq_separation": ":"
+  }
+}

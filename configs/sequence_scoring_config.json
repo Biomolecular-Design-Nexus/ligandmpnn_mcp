@@ -1,0 +1,39 @@
+{
+  "_description": "Configuration for protein sequence likelihood calculation",
+  "_source": "Extracted from examples/use_case_3_sequence_scoring.py",
+
+  "model": {
+    "model_type": "ligand_mpnn",
+    "seed": 111
+  },
+
+  "processing": {
+    "batch_size": 1,
+    "number_of_batches": 1,
+    "verbose": 1
+  },
+
+  "scoring": {
+    "autoregressive_score": 0,
+    "use_sequence": 1,
+    "single_aa_score": 1
+  },
+
+  "ligand_context": {
+    "ligand_mpnn_use_atom_context": 1,
+    "ligand_mpnn_use_side_chain_context": 0,
+    "ligand_mpnn_cutoff_for_score": 8.0
+  },
+
+  "advanced": {
+    "homo_oligomer": 0,
+    "zero_indexed": 0,
+    "parse_atoms_with_zero_occupancy": 0,
+    "pdb_path_multi": "",
+    "fixed_residues": "",
+    "fixed_residues_multi": "",
+    "redesigned_residues": "",
+    "redesigned_residues_multi": "",
+    "symmetry_residues": ""
+  }
+}
