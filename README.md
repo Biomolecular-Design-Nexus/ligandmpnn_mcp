@@ -1,6 +1,6 @@
 # LigandMPNN MCP
 
-> A comprehensive Model Control Protocol (MCP) server for protein design using LigandMPNN, providing both local script usage and AI assistant integration for scaffold-based protein sequence generation and likelihood calculation.
+> AI-powered protein design toolkit for scaffold-based sequence generation and ligand-aware protein design using LigandMPNN through Model Context Protocol (MCP)
 
 ## Table of Contents
 - [Overview](#overview)
@@ -15,15 +15,15 @@
 
 ## Overview
 
-LigandMPNN MCP provides access to state-of-the-art protein design algorithms through both standalone scripts and AI assistant integration. It supports scaffold-based protein sequence generation, ligand-aware design, sequence likelihood calculation, and constrained design with fixed residue positions.
+The LigandMPNN MCP provides comprehensive protein design capabilities through both direct script execution and MCP integration. This toolkit enables scaffold-based protein sequence generation with support for ligand-aware design, constrained optimization, and sequence likelihood calculation.
 
 ### Features
-- **Protein Sequence Design**: Generate novel protein sequences using ProteinMPNN and LigandMPNN
-- **Ligand-Aware Design**: Design proteins optimized for ligand binding interactions
-- **Sequence Scoring**: Calculate sequence likelihood and probability distributions
-- **Constrained Design**: Design with fixed positions and amino acid constraints
-- **Batch Processing**: Process multiple structures efficiently
-- **Job Management**: Track long-running tasks with status monitoring
+- **Protein-Ligand Complex Design**: Context-aware sequence generation considering ligand binding
+- **Constrained Design**: Fixed/redesigned residue specification with flexible constraints
+- **Sequence Scoring**: Likelihood calculation and probability estimation for protein sequences
+- **Batch Processing**: Submit large-scale design jobs for background processing
+- **Side Chain Packing**: Combined sequence design and structural optimization
+- **Multiple Model Support**: ProteinMPNN, LigandMPNN, and SolubleMPNN variants
 ### Directory Structure
 ```
 ./
@@ -53,36 +53,42 @@ LigandMPNN MCP provides access to state-of-the-art protein design algorithms thr
 - Python 3.10+
 - CUDA-capable GPU (optional, but recommended for performance)
 
-### Step 1: Create Environment
+### Create Environment
+Please strictly follow the information in `reports/step3_environment.md` to obtain the procedure to setup the environment. An example workflow is shown below.
 
 ```bash
 # Navigate to the MCP directory
 cd /home/xux/Desktop/ProteinMCP/ProteinMCP/tool-mcps/ligandmpnn_mcp
 
 # Create conda environment (use mamba if available)
-mamba create -p ./env python=3.10 -y
-# or: conda create -p ./env python=3.10 -y
+mamba create -p ./env python=3.11 -y
+# or: conda create -p ./env python=3.11 -y
 
 # Activate environment
 mamba activate ./env
 # or: conda activate ./env
-```
 
-### Step 2: Install Dependencies
-
-```bash
-# Install Python dependencies
-pip install -r requirements.txt
+# Install Dependencies
+pip install -r repo/LigandMPNN/requirements.txt
 
 # Install MCP dependencies
-pip install fastmcp loguru
+pip install fastmcp loguru --ignore-installed
 ```
 
-### Step 3: Verify Installation
+### Verify Installation
 
 ```bash
 # Test imports
-python -c "from src.server import mcp; print(f'Found {len(mcp.list_tools())} tools')"
+python -c "import torch; import numpy; import fastmcp; print('✅ Environment setup successful')"
+
+# Test MCP server
+python -c "
+import sys; sys.path.insert(0, 'src')
+from server import mcp
+import asyncio
+tools = asyncio.run(mcp.get_tools())
+print(f'Found {len(tools)} MCP tools')
+"
 ```
 
 ---
@@ -337,27 +343,29 @@ These tools return a job_id for tracking (> 10 minutes):
 
 ## Examples
 
-### Example 1: Basic Protein Analysis
+### Example 1: Basic Protein Design
 
-**Goal:** Analyze and redesign a protein structure
+**Goal:** Generate diverse sequences for 1BC8 (93-residue protein with ligand)
 
 **Using Script:**
 ```bash
 python scripts/protein_design.py \
   --input examples/data/1BC8.pdb \
-  --output results/example1/ \
-  --num_sequences 5
+  --output results/basic_design \
+  --num_sequences 5 \
+  --temperature 0.1
 ```
 
 **Using MCP (in Claude Code):**
 ```
-Use simple_design to process @examples/data/1BC8.pdb and generate 5 sequences, save results to results/example1/
+Use simple_design with input_file @examples/data/1BC8.pdb and num_sequences 5 to generate diverse protein sequences
 ```
 
 **Expected Output:**
-- Generated FASTA sequence files in `results/example1/seqs/`
-- Backbone PDB files with new sequences
-- Design statistics and metadata
+- 5 FASTA sequence files in `results/basic_design/seqs/`
+- Generated sequences for 93 residues in chain A
+- Execution time: ~15 seconds
+- Design statistics showing sequence diversity
 
 ### Example 2: Ligand-Aware Design
 
@@ -382,71 +390,74 @@ Run ligand_design on @examples/data/1BC8.pdb with atom context enabled and gener
 - Optimized protein-ligand binding interfaces
 - Confidence scores for ligand interactions
 
-### Example 3: Sequence Scoring
+### Example 3: Sequence Likelihood Scoring
 
-**Goal:** Evaluate sequence likelihood for a given structure
+**Goal:** Score the native sequence of 1BC8 to validate model performance
 
 **Using Script:**
 ```bash
 python scripts/sequence_scoring.py \
   --input examples/data/1BC8.pdb \
   --sequences "MKTVRQERLKSIVRILERSKEPVSGAQLAEELSVSRQVIVQDIAYLRSLGYNIVATPRGYVLAGG" \
-  --output results/scoring.pt
+  --output results/test_scoring.pt
 ```
 
 **Using MCP (in Claude Code):**
 ```
-Score the sequence "MKTVRQERLKSIVRILERSKEPVSGAQLAEELSVSRQVIVQDIAYLRSLGYNIVATPRGYVLAGG" using @examples/data/1BC8.pdb as reference structure
+Use sequence_scoring with @examples/data/1BC8.pdb to score this native sequence: "MKTVRQERLKSIVRILERSKEPVSGAQLAEELSVSRQVIVQDIAYLRSLGYNIVATPRGYVLAGG"
 ```
 
 **Expected Output:**
-- PyTorch tensor file with likelihood scores
-- Per-residue probability distributions
-- Native sequence comparison scores
+- `results/1BC8.pt` file (271KB PyTorch tensor)
+- Likelihood scores for the 93-residue sequence
+- Execution time: ~3 seconds
+- High scores indicating native sequence compatibility
 
 ### Example 4: Constrained Design
 
-**Goal:** Design with specific residues fixed in place
+**Goal:** Design 1BC8 while keeping N-terminal residues fixed
 
 **Using Script:**
 ```bash
 python scripts/constrained_design.py \
   --input examples/data/1BC8.pdb \
-  --output results/constrained/ \
+  --output results/test_constrained \
   --fixed_residues "C1 C2 C3" \
-  --num_sequences 2
+  --num_sequences 1
 ```
 
 **Using MCP (in Claude Code):**
 ```
-Use constrained_design with @examples/data/1BC8.pdb, keeping residues 1, 2, and 3 fixed, generate 2 sequences
+Use constrained_design with @examples/data/1BC8.pdb and fixed_positions "1 2 3" to preserve N-terminal while redesigning the rest
 ```
 
 **Expected Output:**
-- Sequences with specified residues preserved
-- Constraint satisfaction report
-- Optimized variable regions
+- Fixed residues: ['C1', 'C2', 'C3'] (positions 1-3)
+- Redesigned residues: ['C4', 'C5', ..., 'C93'] (positions 4-93)
+- Execution time: ~4 seconds
+- Constraint satisfaction verified in output
 
-### Example 5: Batch Processing
+### Example 5: Multi-Structure Batch Processing
 
-**Goal:** Process multiple structures at once
-
-**Using Script:**
-```bash
-for f in examples/data/*.pdb; do
-  python scripts/protein_design.py --input "$f" --output results/batch/
-done
-```
+**Goal:** Process all example structures (1BC8, 2GFB, 4GYT) in a single job
 
 **Using MCP (in Claude Code):**
 ```
-Submit batch processing for all PDB files in @examples/data/ with 3 sequences each
+Submit batch processing using submit_batch_design with input_dir @examples/data/ and file_pattern "*.pdb" and num_sequences 2
+```
+
+**Check Progress:**
+```
+Use get_job_status with the returned job_id to monitor progress
+Use get_job_log with the job_id to see execution details
+Use get_job_result when status shows completed
 ```
 
 **Expected Output:**
-- Individual design results for each structure
-- Batch processing status and logs
-- Consolidated results directory
+- Job submission with unique job_id (e.g., "bd872127")
+- Processing 3 PDB files: 1BC8.pdb (142KB), 2GFB.pdb (2.3MB), 4GYT.pdb (525KB)
+- 2 sequences generated per structure
+- Individual results for each protein in batch output directory
 
 ---
 
